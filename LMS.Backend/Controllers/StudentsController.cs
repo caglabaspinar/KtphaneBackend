@@ -1,105 +1,74 @@
-﻿using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using LMS.Backend.Data;
-using LMS.Backend.DTOs;
-using LMS.Backend.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using LMS.Backend.Data;   
+using LMS.Backend.Models;
+using LMS.Backend.DTOs;   
 
-[Route("api/[controller]")]
-[ApiController]
-public class StudentsController : ControllerBase
+namespace LMS.Backend.Controllers
 {
-    private readonly LMSDbContext _context;
-    private readonly IConfiguration _configuration; 
-    public StudentsController(LMSDbContext context, IConfiguration configuration)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class StudentsController : ControllerBase
     {
-        _context = context;
-        _configuration = configuration; 
-    }
-#pragma warning disable CS8604 
-    private string HashPassword(string password)
-    {
-        using (var sha256 = SHA256.Create())
-        {
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password!));
-            return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
-        }
-    }
-    private string CreateToken(Student student)
-    {
-        var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]); 
+        private readonly LMSDbContext _context;
 
-        var tokenDescriptor = new SecurityTokenDescriptor
+        public StudentsController(LMSDbContext context)
         {
-            Subject = new ClaimsIdentity(new[]
+            _context = context;
+        }
+
+        
+        [HttpPost]
+        public async Task<ActionResult<Student>> Register(StudentRegisterDto request)
+        {
+            
+            var student = new Student
             {
-            new Claim(ClaimTypes.NameIdentifier, student.Id.ToString() ?? throw new ArgumentNullException(nameof(student.Id))),
-            new Claim(ClaimTypes.Email, student.Email ?? throw new ArgumentNullException(nameof(student.Email)))
-        }),
-            Expires = DateTime.UtcNow.AddDays(7),
-            Issuer = _configuration["Jwt:Issuer"],
-            Audience = _configuration["Jwt:Audience"],
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-        };
+                FullName = request.FullName,
+                Email = request.Email,
+                Password = request.Password 
+            };
 
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token);
-    }
+            _context.Students.Add(student);
+            await _context.SaveChangesAsync();
 
-    [HttpPost]
-    public async Task<ActionResult<Student>> Register(StudentRegisterDto request)
-    {
-        if (await _context.Students.AnyAsync(s => s.Email == request.Email))
-        {
-            return BadRequest("Bu e-posta adresi zaten kayıtlıdır.");
+           
+            return CreatedAtAction(nameof(GetStudent), new { id = student.Id }, student);
         }
 
-        var passwordHash = HashPassword(request.Password);
-
-        var student = new Student
+       
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] StudentLoginDto loginDto)
         {
-            FullName = request.FullName,
-            Email = request.Email,
-            Password = passwordHash 
-        };
-        _context.Students.Add(student);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetStudent), new { id = student.Id }, student);
-    }
+           
+            var student = await _context.Students
+                .FirstOrDefaultAsync(s => s.Email == loginDto.Email && s.Password == loginDto.Password);
 
-    [HttpPost("login")]
-    public async Task<ActionResult<string>> Login(StudentLoginDto request)
-    {
-        var student = await _context.Students.FirstOrDefaultAsync(s => s.Email == request.Email);
+            
+            if (student == null)
+            {
+                return Unauthorized("E-posta veya şifre hatalı.");
+            }
 
-        if (student == null)
-        {
-            return Unauthorized("Kullanıcı adı veya şifre hatalı.");
+           
+            return Ok(new
+            {
+                Id = student.Id,
+                FullName = student.FullName,
+                Email = student.Email
+            });
         }
-        var enteredPasswordHash = HashPassword(request.Password);
 
-        if (enteredPasswordHash != student.Password)
+        
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Student>> GetStudent(int id)
         {
-            return Unauthorized("Kullanıcı adı veya şifre hatalı.");
-        }
-        var token = CreateToken(student);
-        return Ok(new { token = token }); 
-    }
+            var student = await _context.Students.FindAsync(id);
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Student>> GetStudent(int id)
-    {
-        var student = await _context.Students.FindAsync(id);
+            if (student == null) return NotFound();
 
-        if (student == null)
-        {
-            return NotFound();
+            student.Password = null; 
+            return student;
         }
-        student.Password = null;
-        return student;
     }
 }

@@ -8,7 +8,7 @@ using LMS.Backend.DTOs;
 
 [Route("api/[controller]")]
 [ApiController]
-//[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+
 public class BooksController : ControllerBase
 {
     private readonly LMSDbContext _context;
@@ -16,14 +16,9 @@ public class BooksController : ControllerBase
     {
         _context = context;
     }
-
     [HttpPost]
     public async Task<ActionResult<Book>> PostBook(BookCreateDto bookDto)
     {
-        if (!await _context.Library.AnyAsync(l => l.Id == bookDto.LibraryId))
-        {
-            return BadRequest("Belirtilen kütüphane ID'si bulunamadı.");
-        }
         var book = new Book
         {
             Title = bookDto.Title,
@@ -31,6 +26,7 @@ public class BooksController : ControllerBase
             Isbn = bookDto.Isbn,
             LibraryId = bookDto.LibraryId
         };
+
         _context.Books.Add(book);
         await _context.SaveChangesAsync();
 
@@ -39,41 +35,34 @@ public class BooksController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
     {
-        return await _context.Books
-                             .Include(b => b.Library)
-                             .ToListAsync();
+        var books = await _context.Books
+            .Include(b => b.Library)
+            .ToListAsync();
+
+        foreach (var book in books)
+        {
+            book.LibraryName = book.Library?.Name; 
+        }
+
+        return Ok(books);
     }
 
-    /*[HttpGet("{id}")]
-    public async Task<ActionResult<Book>> GetBooks(int id)
+    
+    [HttpPut("{id}")]
+    public async Task<IActionResult> PutBook(int id, BookUpdateDto updateDto)
     {
-        var book = await _context.Books
-                                 .Include(b => b.Library)
-                                 .FirstOrDefaultAsync(b => b.Id == id);
+        var book = await _context.Books.FindAsync(id);
+
         if (book == null)
         {
-            return NotFound();
-        }
-        return book;
-    }
-    */
-    [HttpPut("{id}")]
-    public async Task<IActionResult> PutBook(int id, BookUpdateDto bookDto)
-    {
-        if (!await _context.Library.AnyAsync(l => l.Id == bookDto.LibraryId))
-        {
-            return BadRequest("Belirtilen kütüphane ID'si bulunamadı.");
+            return NotFound("Güncellenecek kitap bulunamadı.");
         }
 
-        var book = await _context.Books.FindAsync(id);
-        if (book == null) return NotFound("Güncellenecek kitap bulunamadı.");
-
-        book.Title = bookDto.Title;
-        book.Author = bookDto.Author;
-        book.Isbn = bookDto.Isbn;
-        book.LibraryId = bookDto.LibraryId;
-
-        _context.Entry(book).State = EntityState.Modified;
+       
+        book.Title = updateDto.Title;
+        book.Author = updateDto.Author;
+        book.Isbn = updateDto.Isbn;
+        book.LibraryId = updateDto.LibraryId;
 
         try
         {
@@ -81,7 +70,7 @@ public class BooksController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!_context.Books.Any(e => e.Id == id))
+            if (!BookExists(id))
             {
                 return NotFound();
             }
@@ -90,6 +79,12 @@ public class BooksController : ControllerBase
                 throw;
             }
         }
+
         return NoContent(); 
+    }
+
+    private bool BookExists(int id)
+    {
+        return _context.Books.Any(e => e.Id == id);
     }
 }

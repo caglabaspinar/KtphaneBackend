@@ -35,18 +35,5 @@ public class LibraryController : ControllerBase
                              .Include(x => x.Books)
                              .ToListAsync();
     }
-    /*
-     [HttpGet("{id}")]
-     public async Task<ActionResult<Library>> GetLibrary(int id)
-     {
-         var library = await _context.Library
-                                     .Include(x => x.Books) 
-                                     .FirstOrDefaultAsync(x => x.Id == id);
-         if (library == null)
-         {
-             return NotFound();
-         }
-         return library;
-     }
-     */
+   
 }

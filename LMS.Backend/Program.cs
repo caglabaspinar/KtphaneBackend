@@ -72,6 +72,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(); 
 var app = builder.Build();
 
+app.UseCors(policy => policy
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowAnyOrigin());
+
 if (app.Environment.IsDevelopment())
 {
     
@@ -88,10 +93,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseCors(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
 app.Run();

@@ -1,129 +1,174 @@
 ﻿
 
-#  Bu proje, bir Kütüphane Yönetim Sistemi (library management system) için geliştirilmiş modern, katmanlı bir
-#  RESTful Web API uygulamasıdır. Proje, kullanıcı kaydı/girişi, kitap/kütüphane yönetimi ve 
-#  öğrenci-kitap ödünç alma işlemlerini yetkilendirme ile yönetmeyi amaçlamaktadır.
+# KtphaneBackend – Library Management System Web API
+
+Bu proje, bir Kütüphane Yönetim Sistemi (Library Management System) için geliştirilmiş modern ve katmanlı bir
+RESTful Web API uygulamasıdır. Proje; kullanıcı kaydı ve giriş işlemleri, kütüphaneler ve kitapların
+listeleme/ekleme süreçleri ile öğrencilerin kitap ödünç alma akışlarını JWT tabanlı yetkilendirme
+mekanizması ile yönetmeyi amaçlamaktadır.
 
 Yazılım Dili = C#
 Framework = ASP.NET Core, NET 8 versiyonu
 Veritabanı = MS SQL Server LocalDB
 Veri Erişim Teknolojisi = Entity Framework Core
-Güvenlik Mekanizması = JWT (JSON Web Token)
+Güvenlik Mekanizması: JWT (JSON Web Token) tabanlı temel kimlik doğrulama ve yetkilendirme altyapısı
 API Belgeleme = Swagger UI (OpenAPI)
 
-# API Kullanım Akışı ve Test Adımları
 
-Adım 1: Temel Veri Girişi 
-   > Kütüphane Kaydı: POST /api/Libraries endpoint'ine geçerli bir LibraryCreateDto gönderin.
+# API Kullanım Akışı
 
-Adım 2: Güvenlik (Authentication) Adımları
-   > Öğrenci Kaydı: POST /api/Students endpoint'ine yeni bir öğrenci bilgisi gönderin.
-   > Giriş ve Token Alma: POST /api/Students/Login endpoint'ine kullanıcı adı ve şifreyi göndererek bir JWT Token alın.
+>Kütüphane Kaydı
+POST /api/Library
+Sistem içinde yeni bir kütüphane oluşturmak için kullanılır.
+Body olarak LibraryCreateDto gönderilir.
 
-Adım 3: Yetkilendirilmiş (Authorized) İşlemler
-   > Token'ı Kullanma: Önceki adımda aldığınız JWT Token'ı kopyalayın.
-   > Authorization: Bearer [Kopyaladığınız Token]
-   > Token'ı başarıyla kullandıktan sonra, artık API'ye kim olduğunuzu kanıtladınız 
-   ve ödünç alma işlemini başlatabilirsiniz.
-   > Endpoint: POST /api/StudentBooks ile bir öğrenci-kitap ödünç alma kaydı oluşturun.
-        
-GET	/api/Books, /api/Students/{id}	Kaynakları listelemenizi (tüm kitaplar) veya 
-belirli bir kaynağın detaylarını okumanızı sağlar.
+>Kütüphane Listeleme
+GET /api/Libraries
+Sistemde kayıtlı tüm kütüphaneleri listelemek için kullanılır.
+Bu endpoint, her bir kütüphaneye ait temel bilgileri (id, ad vb.) döndürür ve
+istemci tarafında kütüphane listesinin görüntülenmesini sağlar.
 
-PUT	/api/Books/{id}	Var olan bir kaynağın (belirli bir ID'ye sahip kitap) tüm bilgilerini güncellemenizi sağlar.
+>Kitap Kaydı
+POST /api/Books
+Sistem içine yeni kitap eklemek için kullanılır.
+Body olarak BookCreateDto (veya projendeki kitap oluşturma DTO’su) gönderilir.
+Kitap bir kütüphaneye bağlı tutuluyorsa ilgili LibraryId bu aşamada gönderilir.
 
-<Kurulan Temel NuGet Paketleri>
+>Kitap Listeleme 
+GET /api/Books
+Sistemde kayıtlı tüm kitapları listeler.
 
-> Projenin temel mimarisini oluşturmak için öncelikle Entity Framework Core paketleri kurulmuştur.
-Bunlar; C# Model sınıflarını veritabanı tablolarına dönüştüren ana paket:
-Microsoft.EntityFrameworkCore, MS SQL Server ile iletişim için gereken sağlayıcı paket
-Microsoft.EntityFrameworkCore.
+>PUT /api/Books/{id}
+Var olan bir kitabın bilgilerini güncellemek için kullanılır.
+Body’de kitabın güncel hali gönderilir. Başarılı olursa kitap kaydı güncellenir.
 
-> SqlServer ve Migration komutlarını çalıştıran araç paketi Microsoft.EntityFrameworkCore.Tools'dur.
+>Öğrenci Kaydı
+POST /api/Students
+Sisteme yeni öğrenci kaydı oluşturur.
+Body olarak öğrenci kayıt DTO’su gönderilir.
 
-> Güvenlik katmanı için, kullanıcı girişinde üretilen JWT Token'ını yetkili işlemlerde doğrulamak üzere
-Microsoft.AspNetCore.Authentication.JwtBearer paketi eklenmiştir. 
+>Öğrenci Giriş (Login)
+POST /api/Students/Login
+Kullanıcı adı/şifre ile giriş yapılır.
+Başarılı olursa response olarak JWT token üretilir ve döndürülür.
 
-> API endpoint'lerini, DTO şemalarını ve modelleri otomatik olarak algılayıp interaktif Swagger UI test arayüzünü
-oluşturmak amacıyla Swashbuckle.AspNetCore ve Microsoft.AspNetCore.OpenApi paketleri kurulmuştur.
+>Kitap Ödünç Alma
+POST /api/StudentBooks
+Öğrenci–kitap ödünç alma kaydı oluşturur.
+Body’de (projendeki DTO’ya göre) en az şu bilgiler bulunur: StudentId, BookId
+
+>Öğrenci Detay Görüntüleme
+GET /api/Students/{id}
+Belirli bir öğrenciye ait detay bilgileri getirir.
+
+>Reports (Raporlama)
+
+GET /api/Reports/library/{libraryId}
+Belirli bir kütüphaneye ait ödünç alma kayıtlarını raporlamak için kullanılır.
+Bu endpoint, ilgili kütüphanede bulunan kitapların hangi öğrenciler tarafından
+ödünç alındığına dair bilgileri listelemek amacıyla tasarlanmıştır.
+
+GET /api/Reports/student/{studentId}
+Belirli bir öğrenciye ait ödünç alma geçmişini raporlamak için kullanılır.
+İlgili öğrencinin hangi kitapları, hangi kütüphanelerden ödünç aldığına
+dair kayıtlar bu endpoint üzerinden görüntülenebilir.
+
+<Kurulum>
+
+Projenin temel mimarisini oluşturmak amacıyla öncelikle Entity Framework Core paketleri kullanılmıştır.
+C# model sınıflarının veritabanı tablolarına dönüştürülmesi için Microsoft.EntityFrameworkCore paketi,
+MS SQL Server ile iletişim kurulabilmesi için ise Microsoft.EntityFrameworkCore.SqlServer paketi
+projeye dahil edilmiştir.
+
+Veritabanı migration işlemlerinin ve ilgili komutların çalıştırılabilmesi amacıyla
+Microsoft.EntityFrameworkCore.Tools paketi kullanılmıştır.
+
+Güvenlik altyapısı kapsamında, kullanıcı giriş işlemi sonrasında üretilen JWT token’larının
+doğrulanabilmesi için Microsoft.AspNetCore.Authentication.JwtBearer paketi projeye eklenmiştir.
+
+API endpoint’lerinin, DTO şemalarının ve modellerin otomatik olarak dokümante edilmesi ve
+interaktif test edilebilmesi amacıyla Swashbuckle.AspNetCore ve
+Microsoft.AspNetCore.OpenApi paketleri kullanılmıştır.
 
 
-#  Temel NuGet paketlerini kurduktan sonra, projenin veri yapısı oluşturuldu.
+# Temel NuGet paketlerinin kurulmasının ardından, projenin veri yapısı oluşturulmuştur.
 
->Varlık Modelleri (Models): Projenin ana varlıklarını (Book, Library, Student, StudentBook) temsil eden C# sınıfları tanımlandı.
+Varlık Modelleri (Models):  
+Projenin ana varlıklarını temsil eden Book, Library, Student ve StudentBook sınıfları
+C# model sınıfları olarak tanımlanmıştır.
 
-> Veritabanı Bağlantısı (DbContext): Bu Modelleri veritabanına bağlamak için LMSDbContext.cs sınıfı,
-Entity Framework Core'un DbContext sınıfından miras alınarak oluşturuldu ve Modeller DbSet olarak buraya eklendi.
+Veritabanı Bağlantısı (DbContext):  
+Tanımlanan modellerin veritabanı ile ilişkilendirilebilmesi amacıyla LMSDbContext.cs sınıfı,
+Entity Framework Core’un DbContext sınıfından türetilmiştir. İlgili modeller DbSet olarak
+bu sınıfa eklenmiştir.
 
-> Bağlantı Dizesi: Veritabanı adresi ve bağlantı bilgileri (DefaultConnection) appsettings.json dosyasına eklendi.
+Bağlantı Dizesi (Connection String):  
+Veritabanı adresi ve bağlantı bilgileri, DefaultConnection adıyla appsettings.json
+dosyasında yapılandırılmıştır.
 
-> Veritabanı Oluşturma: Migration komutları (dotnet ef database update) çalıştırılarak veritabanı yapısı
-fiziksel olarak oluşturuldu.
+Veritabanı Oluşturma (Migration):  
+Entity Framework Core migration komutları (dotnet ef database update) çalıştırılarak
+veritabanı şeması fiziksel olarak oluşturulmuştur.
 
 
-#  Model ve veritabanı yapısı hazırlandıktan sonra, uygulamanın çalışması için gerekli olan tüm hizmetler 
-#  ve kurallar Program.cs dosyasında tanımlanmıştır.
+# Model ve veritabanı yapısı hazırlandıktan sonra, uygulamanın çalışması için gerekli olan temel
+# hizmetler ve yapılandırmalar Program.cs dosyasında tanımlanmıştır.
 
-> Veritabanı Hizmetinin Eklenmesi: appsettings.json dosyasındaki bağlantı dizesi kullanılarak, 
-Entity Framework Core'un LMSDbContext sınıfı bir hizmet olarak uygulamaya tanımlanmıştır 
+Veritabanı Hizmetinin Eklenmesi:  
+appsettings.json dosyasında tanımlanan bağlantı dizesi kullanılarak,
+Entity Framework Core’a ait LMSDbContext sınıfı bir servis olarak uygulamaya eklenmiştir
 (builder.Services.AddDbContext<LMSDbContext>).
 
-> Controller ve Swagger Hizmetleri: API Controller'ları ve interaktif dokümantasyon aracı olan 
-Swagger/OpenAPI hizmetleri (AddControllers, AddSwaggerGen) uygulamaya eklenmiştir.
+Controller ve Swagger Hizmetleri:  
+API Controller’larının çalışabilmesi ve endpoint’lerin test edilebilmesi amacıyla
+AddControllers ve AddSwaggerGen servisleri uygulamaya dahil edilmiştir.
 
-> JWT Yetkilendirme (Authentication) Tanımlaması: Uygulamanın güvenlik mimarisi yapılandırılmıştır.
-appsettings.json içindeki Jwt:Key (Gizli Anahtar), Issuer ve Audience değerleri kullanılarak 
-Token doğrulama kuralları belirlenmiş ve JwtBearer şeması tanımlanmıştır. 
-Bu, yetki gerektiren API endpoint'lerinin korunmasını sağlar.
+JWT Kimlik Doğrulama (Authentication) Yapılandırması:  
+Uygulamanın güvenlik altyapısı kapsamında JWT tabanlı kimlik doğrulama mekanizması
+yapılandırılmıştır. appsettings.json dosyasında tanımlı olan Jwt:Key (gizli anahtar),
+Issuer ve Audience değerleri kullanılarak token doğrulama kuralları belirlenmiş ve
+JwtBearer şeması tanımlanmıştır. Bu yapı, login işlemi sonrasında üretilen token’ların
+doğrulanabilmesini sağlar.
 
-> Geliştirme Ortamı Ayarları: Uygulamanın Geliştirme ortamında çalışması için gerekli olan 
-Middleware'ler (örneğin Swagger UI) etkinleştirilmiştir.
+Geliştirme Ortamı Ayarları:  
+Uygulamanın geliştirme ortamında çalışabilmesi için gerekli olan middleware’ler
+(etkileşimli Swagger UI gibi) etkinleştirilmiştir.
 
-> Middleware Zinciri: Gelen HTTP isteklerinin sırasıyla Yönlendirme (UseRouting), 
-Yetkilendirme (UseAuthentication, UseAuthorization) ve Controller'lara Eşleme (MapControllers) 
-aşamalarından geçmesi sağlanmıştır.
+Middleware Zinciri:  
+Gelen HTTP isteklerinin sırasıyla yönlendirme (UseRouting),
+kimlik doğrulama (UseAuthentication), yetkilendirme altyapısı (UseAuthorization)
+ve Controller’lara yönlendirme (MapControllers) adımlarından geçmesi sağlanmıştır.
 
 
-# Veritabanı ve temel hizmetler tanımlandıktan sonra, API'nin iş mantığını 
-# ve dış dünyaya açılan kapılarını oluşturma sürecine geçilmiştir.
+# Veritabanı ve temel servislerin tanımlanmasının ardından, API’nin iş mantığını ve
+# dış dünyaya açılan uç noktalarını (endpoint’leri) oluşturma sürecine geçilmiştir.
 
-> Veri Transfer Nesneleri (DTO'lar): DTOs klasörü altında, veritabanı modellerinin (Models) belirli işlemler
-için basitleştirilmiş ve güvenli sürümleri (BookCreateDto, StudentLoginDto, StudentReadDto) oluşturulmuştur.
-Bu yaklaşım, gereksiz verilerin API'ye gönderilmesini/alınmasını engellemiş ve güvenlik 
-(örneğin şifre alanını gizlemek) sağlamıştır.
+Veri Transfer Nesneleri (DTO’lar):  
+DTOs klasörü altında, veritabanı modellerinin doğrudan dışarı açılmasını engellemek amacıyla
+belirli işlemler için sadeleştirilmiş veri yapıları (BookCreateDto, StudentLoginDto,
+StudentReadDto vb.) tanımlanmıştır. Bu yaklaşım, gereksiz veri taşınmasını önlemiş ve
+hassas alanların (örneğin şifre bilgileri) korunmasını sağlamıştır.
 
-> İş Mantığı ve Endpoint'ler (Controller'lar): Controllers klasöründe, API isteklerini işleyecek sınıflar
-(BooksController.cs, StudentsController.cs vs.) oluşturulmuştur. Bu Controller'lar, HTTP metotlarına
-(GET, POST, PUT, DELETE) yanıt vererek veritabanı işlemleri (CRUD) ve JWT tabanlı login mantığını yürütür.
+Controller’lar ve Endpoint’ler:  
+Controllers klasöründe, API isteklerini karşılayan controller sınıfları
+(BooksController, StudentsController vb.) oluşturulmuştur. Bu controller’lar,
+HTTP metotları (GET, POST, PUT) üzerinden temel CRUD işlemlerini ve
+JWT tabanlı login sürecini yürütmektedir.
 
-# Projenin güvenlik, performans ve temiz kod açısından yapılan ana iyileştirmeleri:
 
-> NuGet Paket Uyumsuzluğu Çözümü:
-Projenin kurulum aşamasında, özellikle Entity Framework Core ve JWT ile ilgili paketlerin eski veya 
-uyumsuz versiyonlarını kullanmaya çalışmaktan kaynaklanan hatalar alındı. Bu sorun, projenin hedeflediği
-.NET 8 sürümüyle tam olarak eşleşen, paketlerin en güncel ve kararlı versiyonları tercih edilerek çözüldü.
-Ayrıca, başarısız yüklemelerden sonra projeyi temizleyip yeniden inşa etmek (Clean and Rebuild Solution) ve
-Microsoft.EntityFrameworkCore.Tools gibi geliştirme araçlarının konfigürasyonunu doğru yapmak,
-temel bağımlılıkların hatasız ve sağlam bir şekilde kurulmasını sağlamıştır.
+# Proje geliştirme sürecinde, uygulamanın kararlı çalışması, hata ihtimallerinin azaltılması
+# ve kodun sürdürülebilir olması hedeflenerek çeşitli iyileştirmeler yapılmıştır.
 
-> JWT Token Doğrulama Çözümü: Başlangıçta yaşanan, POST /api/Books gibi endpoint'lerde Token'ın algılanmaması 
-ve sürekli 401 Unauthorized hatası alınması problemi çözülmüştür. Çözüm, appsettings.json dosyasındaki
-Jwt:Key değerinin HMAC-SHA256 standardına uygun (minimum 32 karakterden uzun) ve karmaşık bir anahtar ile 
-değiştirilmesi ve Program.cs dosyasında Encoding.UTF8 kullanımıyla tutarlı hale getirilmesidir.
+Geliştirme aşamasında karşılaşılan paket uyumsuzlukları analiz edilerek, projenin
+hedeflediği .NET sürümüyle uyumlu NuGet paketleri tercih edilmiştir. Bu sayede
+derleme ve çalışma sırasında oluşabilecek sürüm kaynaklı problemler giderilmiştir.
 
-> Nullable Referans Türlerinin Kullanımı: C# 8 ve üzeri sürümlerin getirdiği Nullable özelliği proje genelinde
-etkinleştirilmiştir (<Nullable>enable</Nullable>). Bu, olası NullReferenceException hatalarını derleme aşamasında
-yakalamayı sağlayarak uygulamanın dayanıklılığını artırmıştır.
+Kullanıcı giriş sürecinde üretilen JWT token’larının doğru şekilde oluşturulması ve
+doğrulanabilmesi için yapılandırmalar gözden geçirilmiş, login akışının beklenen
+şekilde çalışması sağlanmıştır. Güvenlik altyapısı, ileride genişletilebilecek
+bir yapı olacak şekilde sade tutulmuştur.
 
-#  Gelecek İyileştirme Notu: DTO ve Model Dönüşümleri
-
-> Şu anda proje, DTO'lar (Veri Transfer Nesneleri) ile veritabanı modelleri arasındaki veri dönüşümlerini
-manuel olarak gerçekleştirmektedir. Projenin ölçeklenebilirliğini artırmak, kod tekrarını önlemek 
-(DRY Prensibi) ve Controller katmanını daha temiz tutmak amacıyla, gelecekte bu manuel eşleme işlemlerini
-AutoMapper kütüphanesi ile otomatikleştirmek hedeflenmektedir. Bu, özellikle veri güvenliği
-(okuma DTO'larında şifre hash'lerini hariç tutma) ve yeni alan eklemelerindeki bakım kolaylığı açısından 
-kritik bir iyileştirme olacaktır.
-
-> Gelecekte, API'yi kullananların daha kolay gezinmesi için Swagger UI arayüzündeki Controller gruplarının 
-(Book, Library, Student) ve Schemas (DTO) bölümündeki veri modellerinin gösterim sırasını projenin mantıksal 
-akışına uygun şekilde düzenlemek hedeflenmektedir.
+Uygulama genelinde olası null referans hatalarının önüne geçebilmek amacıyla
+C# dilinin sunduğu Nullable Referans Türleri özelliği aktif olarak kullanılmıştır.
+Bu yaklaşım sayesinde, bazı hatalar çalışma zamanından önce tespit edilerek
+kodun daha güvenilir hale gelmesi sağlanmıştır.

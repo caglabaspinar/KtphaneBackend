@@ -1,69 +1,56 @@
-﻿using LMS.Backend.Data;
-using LMS.Backend.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using LMS.Backend.Data;
+using LMS.Backend.Models;
+using LMS.Backend.DTOs;
 using System.Security.Claims;
 
 namespace LMS.Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class StudentBooksController : ControllerBase
     {
         private readonly LMSDbContext _context;
+
         public StudentBooksController(LMSDbContext context)
         {
             _context = context;
         }
 
+        
         [HttpPost]
-        public async Task<IActionResult> BorrowBook(int bookId)
+        public async Task<IActionResult> BorrowBook([FromBody] StudentBookRequestDto request)
         {
-            var studentIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (studentIdClaim == null) return Unauthorized("Kimlik doğrulanamadı.");
-
-            int studentId = int.Parse(studentIdClaim.Value);
-            
-            var book = await _context.Books.FindAsync(bookId);
+            var book = await _context.Books.FindAsync(request.BookId);
             if (book == null) return NotFound("Kitap bulunamadı.");
+
+            var alreadyBorrowed = await _context.StudentBooks
+                .AnyAsync(sb => sb.StudentId == request.StudentId && sb.BookId == request.BookId);
+
+            if (alreadyBorrowed)
+            {
+                return Conflict("Bu kitap daha önce ödünç alındı.");
+            }
 
             var studentBook = new StudentBook
             {
-                StudentId = studentId,
-                BookId = bookId,
-                BorrowDate = DateTime.UtcNow 
+                StudentId = request.StudentId,
+                BookId = request.BookId,
+                BorrowDate = DateTime.Now
             };
+
             _context.StudentBooks.Add(studentBook);
             await _context.SaveChangesAsync();
 
-            return Ok("Kitap başarıyla ödünç alındı.");
+            return Ok(new
+            {
+                message = "Kitap başarıyla alındı",
+                Title = book.Title,
+                Author = book.Author
+            });
         }
 
-        /*
-        [HttpGet("my-books")]
-        public async Task<IActionResult> GetMyBooks()
-        {
-            var studentIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (studentIdClaim == null) return Unauthorized();
 
-            int studentId = int.Parse(studentIdClaim.Value);
-
-            var myBooks = await _context.StudentBooks
-                .Where(sb => sb.StudentId == studentId) 
-                .Include(sb => sb.Book) 
-                .Select(sb => new
-                {
-                    KitapAdi = sb.Book.Title,
-                    Yazar = sb.Book.Author,
-                    ISBN = sb.Book.Isbn,
-                    OduncTarihi = sb.BorrowDate
-                })
-                .ToListAsync();
-            return Ok(myBooks);
-        } */
     }
 }
