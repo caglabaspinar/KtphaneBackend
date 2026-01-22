@@ -21,7 +21,7 @@ Visual Studio 2022
 MS SQL Server LocalDB (Visual Studio ile birlikte gelir)
 
 Çalıştırma Adımları:
-Projeyi GitHub üzerinden indirin veya klonlayın.
+Projeyi GitHub üzerinden indirin veya klonlayın. Tercihen projeyi, GitHub üzerinden Open with Visual Studio seçeneği kullanılarak da kolayca çalıştırılabilirsiniz.
 Visual Studio 2022 ile LibraryManagementSystem.sln dosyasını açın.
 Gerekli NuGet paketleri otomatik olarak restore edilecektir.
 Projeyi çalıştırmak için F5 tuşuna basın.
