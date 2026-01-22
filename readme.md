@@ -2,16 +2,13 @@
 
 # KtphaneBackend – Library Management System Web API
 
-Bu proje, bir Kütüphane Yönetim Sistemi (Library Management System) için geliştirilmiş modern ve katmanlı bir
-RESTful Web API uygulamasıdır. Proje; kullanıcı kaydı ve giriş işlemleri, kütüphaneler ve kitapların
-listeleme/ekleme süreçleri ile öğrencilerin kitap ödünç alma akışlarını JWT tabanlı yetkilendirme
-mekanizması ile yönetmeyi amaçlamaktadır.
+Bu proje, bir Kütüphane Yönetim Sistemi (Library Management System) için geliştirilmiş katmanlı bir RESTful Web API uygulamasıdır. Projede kütüphane, kitap ve öğrenci kayıtları yönetilmekte; öğrencilerin kitap ödünç alma işlemleri gerçekleştirilmektedir. Geliştirilen API, Android tabanlı frontend uygulaması tarafından kullanılmaktadır.
 
 Yazılım Dili = C#
-Framework = ASP.NET Core, NET 8 versiyonu
+Framework = ASP.NET Core (.NET 8)
 Veritabanı = MS SQL Server LocalDB
 Veri Erişim Teknolojisi = Entity Framework Core
-Güvenlik Mekanizması: JWT (JSON Web Token) tabanlı temel kimlik doğrulama ve yetkilendirme altyapısı
+Güvenlik: JWT (JSON Web Token) tabanlı temel kimlik doğrulama altyapısı
 API Belgeleme = Swagger UI (OpenAPI)
 
 
@@ -73,7 +70,7 @@ Belirli bir öğrenciye ait ödünç alma geçmişini raporlamak için kullanıl
 İlgili öğrencinin hangi kitapları, hangi kütüphanelerden ödünç aldığına
 dair kayıtlar bu endpoint üzerinden görüntülenebilir.
 
-<Kurulum>
+# Kurulum
 
 Projenin temel mimarisini oluşturmak amacıyla öncelikle Entity Framework Core paketleri kullanılmıştır.
 C# model sınıflarının veritabanı tablolarına dönüştürülmesi için Microsoft.EntityFrameworkCore paketi,
@@ -82,9 +79,6 @@ projeye dahil edilmiştir.
 
 Veritabanı migration işlemlerinin ve ilgili komutların çalıştırılabilmesi amacıyla
 Microsoft.EntityFrameworkCore.Tools paketi kullanılmıştır.
-
-Güvenlik altyapısı kapsamında, kullanıcı giriş işlemi sonrasında üretilen JWT token’larının
-doğrulanabilmesi için Microsoft.AspNetCore.Authentication.JwtBearer paketi projeye eklenmiştir.
 
 API endpoint’lerinin, DTO şemalarının ve modellerin otomatik olarak dokümante edilmesi ve
 interaktif test edilebilmesi amacıyla Swashbuckle.AspNetCore ve
@@ -124,20 +118,7 @@ API Controller’larının çalışabilmesi ve endpoint’lerin test edilebilmes
 AddControllers ve AddSwaggerGen servisleri uygulamaya dahil edilmiştir.
 
 JWT Kimlik Doğrulama (Authentication) Yapılandırması:  
-Uygulamanın güvenlik altyapısı kapsamında JWT tabanlı kimlik doğrulama mekanizması
-yapılandırılmıştır. appsettings.json dosyasında tanımlı olan Jwt:Key (gizli anahtar),
-Issuer ve Audience değerleri kullanılarak token doğrulama kuralları belirlenmiş ve
-JwtBearer şeması tanımlanmıştır. Bu yapı, login işlemi sonrasında üretilen token’ların
-doğrulanabilmesini sağlar.
-
-Geliştirme Ortamı Ayarları:  
-Uygulamanın geliştirme ortamında çalışabilmesi için gerekli olan middleware’ler
-(etkileşimli Swagger UI gibi) etkinleştirilmiştir.
-
-Middleware Zinciri:  
-Gelen HTTP isteklerinin sırasıyla yönlendirme (UseRouting),
-kimlik doğrulama (UseAuthentication), yetkilendirme altyapısı (UseAuthorization)
-ve Controller’lara yönlendirme (MapControllers) adımlarından geçmesi sağlanmıştır.
+Projede kullanıcı giriş işlemi sonrasında JWT (JSON Web Token) üretimi yapılacak şekilde temel bir kimlik doğrulama altyapısı hazırlanmıştır. Bu yapı, uygulamada ileride yetkilendirme mekanizmalarının eklenebilmesi için temel bir altyapı oluşturmayı amaçlamaktadır.
 
 
 # Veritabanı ve temel servislerin tanımlanmasının ardından, API’nin iş mantığını ve
@@ -145,30 +126,14 @@ ve Controller’lara yönlendirme (MapControllers) adımlarından geçmesi sağl
 
 Veri Transfer Nesneleri (DTO’lar):  
 DTOs klasörü altında, veritabanı modellerinin doğrudan dışarı açılmasını engellemek amacıyla
-belirli işlemler için sadeleştirilmiş veri yapıları (BookCreateDto, StudentLoginDto,
-StudentReadDto vb.) tanımlanmıştır. Bu yaklaşım, gereksiz veri taşınmasını önlemiş ve
+belirli işlemler için sadeleştirilmiş veri yapıları (BookCreateDto, StudentLoginDto, vb.) tanımlanmıştır. Bu yaklaşım, gereksiz veri taşınmasını önlemiş ve
 hassas alanların (örneğin şifre bilgileri) korunmasını sağlamıştır.
 
 Controller’lar ve Endpoint’ler:  
 Controllers klasöründe, API isteklerini karşılayan controller sınıfları
 (BooksController, StudentsController vb.) oluşturulmuştur. Bu controller’lar,
-HTTP metotları (GET, POST, PUT) üzerinden temel CRUD işlemlerini ve
-JWT tabanlı login sürecini yürütmektedir.
+HTTP metotları (GET, POST, PUT) üzerinden temel CRUD işlemlerini ve login sürecini yürütmektedir.
+
+Proje çalıştırılmadan önce connection string ayarlarının yapılması ve migration işlemlerinin çalıştırılması gerekmektedir. Ardından uygulama çalıştırılarak Swagger arayüzü üzerinden endpoint’ler test edilebilir.
 
 
-# Proje geliştirme sürecinde, uygulamanın kararlı çalışması, hata ihtimallerinin azaltılması
-# ve kodun sürdürülebilir olması hedeflenerek çeşitli iyileştirmeler yapılmıştır.
-
-Geliştirme aşamasında karşılaşılan paket uyumsuzlukları analiz edilerek, projenin
-hedeflediği .NET sürümüyle uyumlu NuGet paketleri tercih edilmiştir. Bu sayede
-derleme ve çalışma sırasında oluşabilecek sürüm kaynaklı problemler giderilmiştir.
-
-Kullanıcı giriş sürecinde üretilen JWT token’larının doğru şekilde oluşturulması ve
-doğrulanabilmesi için yapılandırmalar gözden geçirilmiş, login akışının beklenen
-şekilde çalışması sağlanmıştır. Güvenlik altyapısı, ileride genişletilebilecek
-bir yapı olacak şekilde sade tutulmuştur.
-
-Uygulama genelinde olası null referans hatalarının önüne geçebilmek amacıyla
-C# dilinin sunduğu Nullable Referans Türleri özelliği aktif olarak kullanılmıştır.
-Bu yaklaşım sayesinde, bazı hatalar çalışma zamanından önce tespit edilerek
-kodun daha güvenilir hale gelmesi sağlanmıştır.
