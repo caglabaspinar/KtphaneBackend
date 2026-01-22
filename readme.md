@@ -11,6 +11,36 @@ Veri Erişim Teknolojisi = Entity Framework Core
 Güvenlik: JWT (JSON Web Token) tabanlı temel kimlik doğrulama altyapısı
 API Belgeleme = Swagger UI (OpenAPI)
 
+# Projenin Çalıştırılması
+
+Bu proje Visual Studio 2022 üzerinden çalıştırılmak üzere yapılandırılmıştır.
+
+Gereksinimler:
+Visual Studio 2022 
+.NET 8 SDK
+MS SQL Server LocalDB (Visual Studio ile birlikte gelir)
+
+Çalıştırma Adımları:
+Projeyi GitHub üzerinden indirin veya klonlayın.
+Visual Studio 2022 ile LibraryManagementSystem.sln dosyasını açın.
+Gerekli NuGet paketleri otomatik olarak restore edilecektir.
+Projeyi çalıştırmak için F5 tuşuna basın.
+Uygulama çalıştığında tarayıcıda Swagger UI otomatik olarak açılacaktır.
+
+Veritabanı Bilgisi:
+Projede MS SQL Server LocalDB kullanılmaktadır.
+Gerekli tablolar uygulama çalıştırıldığında otomatik olarak oluşturulmaktadır.
+Ek bir manuel veritabanı kurulumu gerekmemektedir.
+
+API Dokümantasyonu:
+API endpoint’leri Swagger UI üzerinden test edilebilir.
+Swagger arayüzü uygulama çalıştırıldığında otomatik olarak açılır.
+
+Güvenlik:
+Projede kullanıcı kayıt (register) ve giriş (login) işlemleri bulunmaktadır.
+Kimlik doğrulama altyapısı JWT (JSON Web Token) tabanlıdır.
+Proje eğitim amaçlıdır ve güvenlik yapılandırmaları bu kapsamda hazırlanmıştır.
+
 
 # API Kullanım Akışı
 
