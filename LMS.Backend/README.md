@@ -172,3 +172,7 @@ Uygulama genelinde olası null referans hatalarının önüne geçebilmek amacı
 C# dilinin sunduğu Nullable Referans Türleri özelliği aktif olarak kullanılmıştır.
 Bu yaklaşım sayesinde, bazı hatalar çalışma zamanından önce tespit edilerek
 kodun daha güvenilir hale gelmesi sağlanmıştır.
+
+
+Add-Migration AddPublisherToBook
+Update-Database
