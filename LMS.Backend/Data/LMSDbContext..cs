@@ -41,13 +41,13 @@ namespace LMS.Backend.Data
                 .HasMaxLength(20)
                 .HasDefaultValue("Student")
                 .IsRequired();
-
-
-
-
             
 
         }
 
     }
 }
+
+//Bu dosya, veritabanı tablolarını ve ilişkilerini tanımlayan EF Core DbContext sınıfıdır;
+//`Program.cs`’teki `AddDbContext` ile bağlanır ve tüm controller’lar, servisler, `DbSeeder`
+//ve modeller (`Library`, `Book`, `Student`, `StudentBook`) ile bağlantılı çalışır.

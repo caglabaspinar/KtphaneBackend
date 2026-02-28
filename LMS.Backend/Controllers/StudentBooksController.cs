@@ -1,4 +1,5 @@
-﻿using LMS.Backend.Data;
+﻿using Microsoft.Extensions.Logging;
+using LMS.Backend.Data;
 using LMS.Backend.DTOs;
 using LMS.Backend.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -15,13 +16,17 @@ namespace LMS.Backend.Controllers
     public class StudentBooksController : ControllerBase
     {
         private readonly LMSDbContext _context;
+        private readonly ILogger<StudentBooksController> _logger;
 
-        public StudentBooksController(LMSDbContext context)
+
+        public StudentBooksController(LMSDbContext context, ILogger<StudentBooksController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
-        
+
+
         private int GetStudentIdFromToken()
         {
             var idStr =
@@ -43,7 +48,6 @@ namespace LMS.Backend.Controllers
             var book = await _context.Books.FindAsync(request.BookId);
             if (book == null) return NotFound("Kitap bulunamadı.");
 
-            // Aynı kitap şu an aktif ödünçte mi?
             var alreadyBorrowed = await _context.StudentBooks.AnyAsync(sb =>
                 sb.StudentId == studentId &&
                 sb.BookId == request.BookId &&
@@ -62,6 +66,9 @@ namespace LMS.Backend.Controllers
 
             _context.StudentBooks.Add(studentBook);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Borrow. StudentId: {StudentId}, BookId: {BookId}", studentId, request.BookId);
+
 
             return Ok(new
             {
@@ -92,6 +99,9 @@ namespace LMS.Backend.Controllers
 
             record.ReturnDate = DateTime.Now;
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Return. StudentId: {StudentId}, BookId: {BookId}", studentId, request.BookId);
+
 
             return Ok(new
             {
@@ -154,3 +164,8 @@ namespace LMS.Backend.Controllers
         }
     }
 }
+
+//Bu dosya, giriş yapan öğrencinin token’ından kendi kimliğini alarak kitap ödünç
+//alma/teslim etme işlemlerini yapar ve öğrencinin aktif ödünçlerini ile ödünç geçmişini
+//listeleyen API controller’ıdır.
+

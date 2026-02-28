@@ -65,3 +65,7 @@ namespace LMS.Backend.Services
         }
     }
 }
+//Bu dosya, kullanıcı şifrelerini güvenli şekilde hashleyip doğrulamak için kullanılır ve
+//`StudentsController` (register/login işlemleri), `DbSeeder` (admin oluşturma) ve veritabanındaki
+//`Student` modeliyle bağlantılı çalışır.
+

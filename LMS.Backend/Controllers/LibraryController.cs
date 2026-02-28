@@ -58,3 +58,7 @@ public class LibraryController : ControllerBase
         return NoContent();
     }
 }
+
+//Bu dosya, kütüphaneleri listeleyen ve Admin yetkisiyle kütüphane ekleme ile güncelleme
+//işlemlerini gerçekleştiren API controller’ıdır.
+

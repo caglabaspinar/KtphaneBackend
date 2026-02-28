@@ -12,6 +12,10 @@ namespace LMS.Backend.Models
         
         public string Role { get; set; } = "Student";
 
+        public string? PasswordResetCode { get; set; }
+        public DateTime? PasswordResetExpiresAt { get; set; }
+
+
         public ICollection<StudentBook> StudentBooks { get; set; } = new List<StudentBook>();
     }
 }

@@ -4,6 +4,7 @@ using LMS.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LMS.Backend.Migrations
 {
     [DbContext(typeof(LMSDbContext))]
-    partial class LMSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260213122325_AddPasswordResetFields")]
+    partial class AddPasswordResetFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,9 +62,6 @@ namespace LMS.Backend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("LibraryId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PageCount")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
@@ -189,7 +188,3 @@ namespace LMS.Backend.Migrations
         }
     }
 }
-
-//Bu dosya, EF Core’un veritabanı şemasının “son halini” otomatik olarak saklayan migration
-//snapshot’ıdır ve yeni migration üretirken mevcut model ile farkları hesaplamak için kullanılır.
-

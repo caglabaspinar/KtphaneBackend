@@ -16,3 +16,6 @@ namespace LMS.Backend.Validators
         }
     }
 }
+//Bu dosya, giriş yapılırken gönderilen e-posta ve şifrenin boş olup olmadığını ve e-posta
+//formatının doğru olup olmadığını kontrol eden doğrulama sınıfıdır.
+

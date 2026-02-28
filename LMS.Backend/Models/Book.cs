@@ -12,7 +12,9 @@ namespace LMS.Backend.Models
 
         public string Author { get; set; } = string.Empty; 
 
-        public string Isbn { get; set; } = string.Empty; 
+        public string? Isbn { get; set; } 
+        public int? PageCount { get; set; }
+
 
         public int LibraryId { get; set; } 
 

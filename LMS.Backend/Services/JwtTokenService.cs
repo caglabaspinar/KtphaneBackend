@@ -48,3 +48,6 @@ namespace LMS.Backend.Services
         }
     }
 }
+//Bu dosya, login başarılı olduğunda kullanıcı bilgilerini kullanarak JWT token üretir ve
+//`Program.cs`’teki JWT authentication ayarları ile, `StudentsController` (login işlemi) ve
+//`appsettings.json` içindeki Jwt ayarlarıyla bağlantılı çalışır.

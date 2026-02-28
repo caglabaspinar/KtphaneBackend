@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LMS.Backend.Data;
@@ -10,10 +11,13 @@ using System.Security.Claims;
 public class ReportsController : ControllerBase
 {
     private readonly LMSDbContext _context;
+    private readonly ILogger<ReportsController> _logger;
 
-    public ReportsController(LMSDbContext context)
+
+    public ReportsController(LMSDbContext context, ILogger<ReportsController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
    
@@ -29,7 +33,7 @@ public class ReportsController : ControllerBase
         return int.Parse(idStr);
     }
 
-  
+
     [HttpGet("library/{libraryId}")]
     public async Task<IActionResult> GetLibraryBooksReport(int libraryId)
     {
@@ -42,6 +46,7 @@ public class ReportsController : ControllerBase
                 Title = b.Title,
                 Author = b.Author,
                 Isbn = b.Isbn,
+                PageCount = b.PageCount, 
                 LibraryId = b.LibraryId,
                 LibraryName = b.Library != null ? b.Library.Name : "Unknown"
             })
@@ -50,7 +55,8 @@ public class ReportsController : ControllerBase
         return Ok(books);
     }
 
-  
+
+
     [Authorize]
     [HttpGet("student/{studentId}")]
     public async Task<IActionResult> GetStudentBooksReport(int studentId)
@@ -62,7 +68,12 @@ public class ReportsController : ControllerBase
         var isSelf = currentUserId == studentId;
 
         if (!isAdmin && !isSelf)
+        {
+            _logger.LogWarning("Yetkisiz rapor denemesi. CurrentUserId: {CurrentUserId}, TargetStudentId: {TargetStudentId}, Role: {Role}",
+                currentUserId, studentId, role);
             return Forbid("Başka öğrencinin raporunu görüntüleyemezsin.");
+        }
+
 
         var studentBooks = await _context.StudentBooks
             .Include(sb => sb.Book)
@@ -89,8 +100,13 @@ public class ReportsController : ControllerBase
     
     [Authorize(Roles = "Admin")]
     [HttpGet("admin/borrows")]
+
     public async Task<IActionResult> GetAllBorrows()
     {
+
+        var adminId = GetUserIdFromToken();
+        _logger.LogInformation("Admin borrows raporu görüntülendi. AdminId: {AdminId}", adminId);
+
         var list = await _context.StudentBooks
             .Include(sb => sb.Student)
             .Include(sb => sb.Book)
@@ -153,3 +169,7 @@ public class ReportsController : ControllerBase
         return Ok(list);
     }
 }
+//Bu dosya, kütüphane, öğrenci ve ödünç işlemlerine ait raporları üretir;
+//öğrencinin kendi raporunu veya Admin’in tüm ödünç geçmişini yetki kontrolü yaparak
+//listeleyen API controller’ıdır.
+

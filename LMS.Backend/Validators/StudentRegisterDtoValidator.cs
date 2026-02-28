@@ -35,3 +35,6 @@ namespace LMS.Backend.Validators
         }
     }
 }
+//Bu dosya, öğrenci kayıt olurken gönderilen e-posta ve şifrenin kurallara uygun olup
+//olmadığını ve e-posta adresinin daha önce kullanılıp kullanılmadığını kontrol eden doğrulama sınıfıdır.
+

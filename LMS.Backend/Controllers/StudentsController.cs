@@ -19,6 +19,9 @@ namespace LMS.Backend.Controllers
         private readonly IPasswordService _passwordService;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly ILogger<StudentsController> _logger;
+        private readonly IValidator<ResetPasswordDto> _resetPasswordValidator;
+        private readonly IEmailService _emailService;
+
 
         public StudentsController(
             LMSDbContext context,
@@ -26,7 +29,10 @@ namespace LMS.Backend.Controllers
             IValidator<StudentLoginDto> loginValidator,
             IPasswordService passwordService,
             IJwtTokenService jwtTokenService,
-            ILogger<StudentsController> logger)
+            ILogger<StudentsController> logger,
+            IValidator<ResetPasswordDto> resetPasswordValidator,
+            IEmailService emailService)
+
         {
             _context = context;
             _registerValidator = registerValidator;
@@ -34,6 +40,8 @@ namespace LMS.Backend.Controllers
             _passwordService = passwordService;
             _jwtTokenService = jwtTokenService;
             _logger = logger;
+            _resetPasswordValidator = resetPasswordValidator;
+            _emailService = emailService;
         }
 
         [HttpPost]
@@ -57,6 +65,9 @@ namespace LMS.Backend.Controllers
 
             _context.Students.Add(student);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Register başarılı. StudentId: {StudentId}", student.Id);
+
 
             return CreatedAtAction(nameof(GetStudent), new { id = student.Id }, new
             {
@@ -126,5 +137,127 @@ namespace LMS.Backend.Controllers
                 Role = student.Role
             });
         }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest(new { message = "Email zorunludur." });
+
+            var email = dto.Email.Trim().ToLower();
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.Email == email);
+
+            
+            if (student == null)
+            {
+                _logger.LogWarning("Forgot password denemesi (kullanıcı yok). Email: {Email}", email);
+                return BadRequest(new { message = "Bu mail adresi kayıtlı değil. Lütfen kayıt olun." });
+            }
+
+            
+            var code = Random.Shared.Next(100000, 999999).ToString();
+            student.PasswordResetCode = code;
+            student.PasswordResetExpiresAt = DateTime.Now.AddMinutes(15);
+
+            await _context.SaveChangesAsync();
+
+            var subject = "Şifre Sıfırlama Kodu";
+            var body =
+        $@"Merhaba {student.FullName},
+
+Şifre sıfırlama kodunuz: {code}
+
+Bu kod 15 dakika geçerlidir.
+
+Kütüphane Mobil";
+
+            await _emailService.SendAsync(student.Email, subject, body);
+
+            _logger.LogInformation(
+                "Forgot password code üretildi ve mail atıldı. StudentId: {StudentId}, Email: {Email}",
+                student.Id, email
+            );
+
+            return Ok(new { message = "Şifre sıfırlama kodu e-postana gönderildi." });
+        }
+
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Code) || string.IsNullOrWhiteSpace(dto.NewPassword))
+                return BadRequest(new { message = "Email, kod ve yeni şifre zorunludur." });
+
+            var email = dto.Email.Trim().ToLower();
+            _logger.LogError("RESET-PASSWORD HIT ✅ (new-same-check should be active) Email: {Email}", email);
+            dto.NewPassword = dto.NewPassword.Trim();
+            dto.Code = dto.Code.Trim();
+
+            var validationResult = await _resetPasswordValidator.ValidateAsync(dto);
+            if (!validationResult.IsValid)
+                return BadRequest(validationResult.Errors.Select(e => e.ErrorMessage));
+
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.Email == email);
+            if (student == null)
+            {
+                _logger.LogWarning("Reset password başarısız (kullanıcı yok). Email: {Email}", email);
+                return BadRequest(new { message = "Kod veya e-posta hatalı." });
+            }
+
+            if (student.PasswordResetCode == null || student.PasswordResetExpiresAt == null)
+            {
+                _logger.LogWarning("Reset password başarısız (kod yok). StudentId: {StudentId}, Email: {Email}", student.Id, email);
+                return BadRequest(new { message = "Kod veya e-posta hatalı." });
+            }
+
+            if (student.PasswordResetExpiresAt < DateTime.Now)
+            {
+                _logger.LogWarning("Reset password başarısız (kod süresi doldu). StudentId: {StudentId}, Email: {Email}", student.Id, email);
+                return BadRequest(new { message = "Kodun süresi doldu." });
+            }
+
+            if (student.PasswordResetCode != dto.Code.Trim())
+            {
+                _logger.LogWarning("Reset password başarısız (kod yanlış). StudentId: {StudentId}, Email: {Email}", student.Id, email);
+                return BadRequest(new { message = "Kod veya e-posta hatalı." });
+            }
+
+
+           
+            var isSameAsOld = _passwordService.VerifyPassword(student.PasswordHash, dto.NewPassword);
+            if (isSameAsOld)
+            {
+                _logger.LogWarning("Reset password başarısız (aynı şifre). StudentId: {StudentId}, Email: {Email}", student.Id, email);
+                return BadRequest(new { message = "Yeni şifre eski şifreyle aynı olamaz." });
+            }
+
+            student.PasswordHash = _passwordService.HashPassword(dto.NewPassword);
+            student.PasswordResetCode = null;
+            student.PasswordResetExpiresAt = null;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Reset password başarılı. StudentId: {StudentId}, Email: {Email}", student.Id, email);
+
+            return Ok(new { message = "Şifre başarıyla güncellendi." });
+        }
+
+        [HttpGet("test-email")]
+        public async Task<IActionResult> TestEmail([FromServices] IEmailService emailService)
+        {
+            await emailService.SendAsync(
+                "test@recipient.com",
+                "Mailtrap Test",
+                "Merhaba! Bu bir test mailidir."
+            );
+
+            return Ok("Mail gönderildi (Mailtrap inbox'a düşmeli).");
+        }
+
+
+
     }
 }
+
+//Bu dosya, öğrenci kayıt ve giriş işlemlerini yapıp JWT token üretir, öğrenci bilgisi getirir
+//ve “şifremi unuttum/şifre sıfırla” akışında kod üretip mail göndererek şifreyi günceller.
+
